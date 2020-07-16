@@ -16,15 +16,21 @@ namespace EdgeWebView2Test
   {
     private FrmRemoteControl remoteControl = new FrmRemoteControl();
     private ActivityMonitorInterface activityInterface;
-    private Task<CoreWebView2Environment> _webView2Environment = CoreWebView2Environment.CreateAsync();
+    private CoreWebView2Environment _webView2Environment;
 
     public FrmMainForm()
     {
       InitializeComponent();
       webView.CoreWebView2Ready += WebView_CoreWebView2Ready;
-
+      _ = InitializeAsync();
       remoteControl.RemoteKeyPressed += RemoteControl_RemoteKeyPressed;
       remoteControl.Show();
+    }
+
+    private async Task InitializeAsync()
+    {
+        _webView2Environment = await CoreWebView2Environment.CreateAsync();
+        await webView.EnsureCoreWebView2Async(_webView2Environment);
     }
 
     private void RemoteControl_RemoteKeyPressed(int virtualKeyCode)
@@ -68,8 +74,8 @@ namespace EdgeWebView2Test
     {
       webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
 
-      //webView.CoreWebView2.AddWebResourceRequestedFilter("http://cheese/", CoreWebView2WebResourceContext.All);
-      //webView.CoreWebView2.WebResourceRequested += CoreWebView2_WebResourceRequested;
+      webView.CoreWebView2.AddWebResourceRequestedFilter("http://cheese/", CoreWebView2WebResourceContext.All);
+      webView.CoreWebView2.WebResourceRequested += CoreWebView2_WebResourceRequested;
 
 
       // Main browser polyfill (For message and event hanldling etc)
@@ -104,14 +110,28 @@ namespace EdgeWebView2Test
 
     private void CoreWebView2_WebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs e)
     {
-      HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
-      response.Content = new ByteArrayContent(File.ReadAllBytes(@"c:\\test.png"));
-      response.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-      //response.StatusCode = HttpStatusCode.OK;
+            var responseStream = File.OpenRead(@"c:\\test.png");
+            var responseContentType = "image/png";
 
-      e.Response = response;
+            var eventType = e.GetType();
+            var field = eventType.GetField("_nativeCoreWebView2WebResourceRequestedEventArgs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var nativeArgs = field.GetValue(e);
 
-    }
+            field = _webView2Environment.GetType().GetField("_nativeCoreWebView2Environment", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var nativeEnvironment = field.GetValue(_webView2Environment);
+
+            var managedStream = Activator.CreateInstance(eventType.Assembly.GetType("Microsoft.Web.WebView2.Core.ManagedIStream"),
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
+                null,
+                new object[] { responseStream },
+                null);
+
+            var createWebSourceResponseMethod = eventType.Assembly.GetType("Microsoft.Web.WebView2.Core.Raw.ICoreWebView2Environment").GetMethod("CreateWebResourceResponse", new Type[] { Type.GetType("System.Runtime.InteropServices.ComTypes.IStream"), typeof(int), typeof(string), typeof(string) });
+            var response = createWebSourceResponseMethod.Invoke(nativeEnvironment, new object[] { managedStream, 200, "OK", $"Content-Type: {responseContentType}" });
+
+            var responseProperty = eventType.Assembly.GetType("Microsoft.Web.WebView2.Core.Raw.ICoreWebView2WebResourceRequestedEventArgs").GetProperty("Response");
+            responseProperty.SetValue(nativeArgs, response);
+        }
 
     private void btnGo_Click(object sender, EventArgs e)
     {
