@@ -21,7 +21,8 @@ namespace EdgeWebView2Test
     public FrmMainForm()
     {
       InitializeComponent();
-      webView.CoreWebView2Ready += WebView_CoreWebView2Ready;
+      //webView.CoreWebView2Ready += WebView_CoreWebView2Ready;
+      webView.CoreWebView2InitializationCompleted += WebView_CoreWebView2Ready;
       _ = InitializeAsync();
       remoteControl.RemoteKeyPressed += RemoteControl_RemoteKeyPressed;
       remoteControl.Show();

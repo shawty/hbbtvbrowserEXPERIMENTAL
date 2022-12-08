@@ -46,7 +46,7 @@
       this.webView.Size = new System.Drawing.Size(1280, 720);
       this.webView.Source = new System.Uri("http://portaltv.tv/testing/", System.UriKind.Absolute);
       this.webView.TabIndex = 0;
-      this.webView.Text = "webView";
+      //this.webView.Text = "webView";
       this.webView.ZoomFactor = 1D;
       // 
       // txtAddressBar
