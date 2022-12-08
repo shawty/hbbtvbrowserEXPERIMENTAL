@@ -11,6 +11,6 @@ I'm adding an MIT licence on this, but honestly, since it's work in progress I r
 
 I've worked out some interesting ways to get the javascript side of things communicating with the windows side of things, using just whats available in thier right now.
 
-I'm kinda hoping that MS gives us a better hook to tap into using "&lt;object&gt;&lt;</object>&gt;" tags and having them exposed to C# code, that would be the icing on the cake for me implementing this stuff :-)
+I'm kinda hoping that MS gives us a better hook to tap into using "&lt;object&gt;&lt;/object&gt;" tags and having them exposed to C# code, that would be the icing on the cake for me implementing this stuff :-)
 
 Above all though, read the code, examine the methods, that's what it's intended for, it's not intended as a finished application...
